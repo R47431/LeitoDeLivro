@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-//import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
 public class PDFViewer extends JFrame {
@@ -264,7 +263,7 @@ public class PDFViewer extends JFrame {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         openFilePDF(new File(filePath));
-                        bookmarksPanel.setVisible(false); // Redesenha o painel de marcadores
+                        bookmarksPanel.setVisible(false);
 
                     }
                 });
@@ -281,29 +280,23 @@ public class PDFViewer extends JFrame {
         Path destinationPath = Paths.get(destinationPathStr);
 
         if (Files.isDirectory(sourcePath)) {
-            // Se for um diretório, copia o diretório recursivamente
             copyDirectory(sourcePath, destinationPath);
         } else {
-            // Se for um arquivo, copia o arquivo
             Files.copy(sourcePath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
     private void copyDirectory(Path source, Path destination) throws IOException {
-        // Cria o diretório de destino se ele não existir
         if (!Files.exists(destination)) {
             Files.createDirectory(destination);
         }
 
-        // Itera sobre todos os arquivos/diretórios no diretório de origem
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(source)) {
             for (Path file : stream) {
                 Path target = destination.resolve(file.getFileName());
                 if (Files.isDirectory(file)) {
-                    // Se for um diretório, chama recursivamente copyDirectory
                     copyDirectory(file, target);
                 } else {
-                    // Se for um arquivo, copia o arquivo
                     Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
@@ -318,5 +311,4 @@ public class PDFViewer extends JFrame {
             }
         });
     }   
-    
 }
