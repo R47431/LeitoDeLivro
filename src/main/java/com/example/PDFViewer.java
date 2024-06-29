@@ -318,4 +318,5 @@ public class PDFViewer extends JFrame {
             }
         });
     }   
+    
 }
