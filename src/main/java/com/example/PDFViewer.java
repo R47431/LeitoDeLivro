@@ -2,7 +2,6 @@ package com.example;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.file.DirectoryStream;
