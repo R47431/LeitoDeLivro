@@ -16,20 +16,10 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.PDFRenderer;
 
 public class PDFViewer extends JFrame {
-    private JLabel labelBookTitle;
-    private JLabel label;
-    private JButton buttonOpen;
-    private JButton buttonPrevious;
-    private JButton buttonNext;
-    private JLabel labelInfo;
-    private JPanel bookmarksPanel;
-    private PDDocument pdfDocument;
-    private PDFRenderer pdfRenderer;
-    private int currentPage = 0;
-    private String bookmarkFile = "bookmark.txt";
-    private File selectedFile;
+    private Modelos modelos;
 
     public PDFViewer() {
+        modelos = new Modelos();
         setTitle("PDF Viewer");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -40,42 +30,43 @@ public class PDFViewer extends JFrame {
     }
 
     private void initializeComponents() {
-        labelBookTitle = new JLabel("", SwingConstants.CENTER);
-        label = new JLabel("", SwingConstants.CENTER);
-        labelInfo = new JLabel("", SwingConstants.CENTER);
-        labelInfo.setPreferredSize(new Dimension(200, 30));
+        modelos.setLabelBookTitle(new JLabel("", SwingConstants.CENTER));
+        modelos.setLabel(new JLabel("", SwingConstants.CENTER));
 
-        buttonOpen = new JButton("Abrir PDF");
-        buttonOpen.addActionListener(e -> openPDF());
+        modelos.setLabelInfo(new JLabel("", SwingConstants.CENTER));
+        modelos.getLabelInfo().setPreferredSize(new Dimension(200, 30));
 
-        buttonPrevious = new JButton("Anterior");
-        buttonPrevious.addActionListener(e -> showPreviousPage());
+        modelos.setButtonOpen(new JButton("Abrir PDF"));
+        modelos.getButtonOpen().addActionListener(e -> openPDF());
 
-        buttonNext = new JButton("Próxima");
-        buttonNext.addActionListener(e -> showNextPage());
+        modelos.setButtonPrevious(new JButton("Anterior"));
+        modelos.getButtonPrevious().addActionListener(e -> showPreviousPage());
+
+        modelos.setButtonNext(new JButton("Próxima"));
+        modelos.getButtonNext().addActionListener(e -> showNextPage());
 
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.BLACK); // Fundo preto
-        panel.add(labelBookTitle, BorderLayout.NORTH);
-        panel.add(new JScrollPane(label), BorderLayout.CENTER);
+        panel.setBackground(Color.BLACK);
+        panel.add(modelos.getLabelBookTitle(), BorderLayout.NORTH);
+        panel.add(new JScrollPane(modelos.getLabel()), BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setBackground(Color.BLACK); // Fundo preto
-        buttonPanel.add(buttonOpen);
-        buttonPanel.add(buttonPrevious);
-        buttonPanel.add(buttonNext);
+        buttonPanel.setBackground(Color.BLACK);
+        buttonPanel.add(modelos.getButtonOpen());
+        buttonPanel.add(modelos.getButtonPrevious());
+        buttonPanel.add(modelos.getButtonNext());
 
         JPanel infoPanel = new JPanel(new BorderLayout());
         infoPanel.setBackground(Color.BLACK); // Fundo preto
         infoPanel.add(buttonPanel, BorderLayout.CENTER);
-        infoPanel.add(labelInfo, BorderLayout.SOUTH);
+        infoPanel.add(modelos.getLabelInfo(), BorderLayout.SOUTH);
 
         panel.add(infoPanel, BorderLayout.SOUTH);
 
-        bookmarksPanel = new JPanel();
-        bookmarksPanel.setBackground(Color.DARK_GRAY); // Fundo cinza escuro
-        panel.add(new JScrollPane(bookmarksPanel), BorderLayout.WEST);
-        panel.add(bookmarksPanel, BorderLayout.WEST);
+        modelos.setBookmarksPanel(new JPanel());
+        modelos.getBookmarksPanel().setBackground(Color.DARK_GRAY);
+        panel.add(new JScrollPane(modelos.getBookmarksPanel()), BorderLayout.WEST);
+        panel.add(modelos.getBookmarksPanel(), BorderLayout.WEST);
 
         getContentPane().setBackground(Color.BLACK); // Fundo preto
         add(panel);
@@ -109,9 +100,10 @@ public class PDFViewer extends JFrame {
 
         int returnValue = fileChooser.showOpenDialog(null);
         if (returnValue == JFileChooser.APPROVE_OPTION) {
-            selectedFile = fileChooser.getSelectedFile();
+            modelos.setSelectedFile(fileChooser.getSelectedFile());
+
             try {
-                loadPDF(selectedFile);
+                loadPDF(modelos.getSelectedFile());
             } catch (IOException e) {
                 showErrorDialog("Erro ao abrir PDF");
             }
@@ -119,21 +111,23 @@ public class PDFViewer extends JFrame {
     }
 
     private void loadPDF(File file) throws IOException {
-        pdfDocument = PDDocument.load(file);
-        pdfRenderer = new PDFRenderer(pdfDocument);
-        currentPage = loadBookmark();
-        displayPage(currentPage);
+        modelos.setPdfDocument(PDDocument.load(file));
+        modelos.setPdfRenderer(new PDFRenderer(modelos.getPdfDocument()));
+        modelos.setCurrentPage(loadBookmark());
+        displayPage(modelos.getCurrentPage());
         updateBookInfo();
         updateNavigationButtons();
         copyFileToPDFDirectory(file);
-        labelBookTitle.setText(file.getName());
+        modelos.getLabelBookTitle().setText(file.getName());
+
     }
 
     private void displayPage(int pageNumber) {
         try {
-            if (pdfDocument != null && pageNumber >= 0 && pageNumber < pdfDocument.getNumberOfPages()) {
-                BufferedImage image = pdfRenderer.renderImageWithDPI(pageNumber, 300);
-                label.setIcon(new ImageIcon(scaleImage(image)));
+            if (modelos.getPdfDocument() != null && pageNumber >= 0
+                    && pageNumber < modelos.getPdfDocument().getNumberOfPages()) {
+                BufferedImage image = modelos.getPdfRenderer().renderImageWithDPI(pageNumber, 300);
+                modelos.getLabel().setIcon(new ImageIcon(scaleImage(image)));
             }
         } catch (IOException e) {
             showErrorDialog("Erro ao exibir página");
@@ -141,47 +135,54 @@ public class PDFViewer extends JFrame {
     }
 
     private Image scaleImage(BufferedImage image) {
-        float scale = Math.min(1f, Math.min((float) label.getWidth() / image.getWidth(), (float) label.getHeight() / image.getHeight()));
-        return image.getScaledInstance((int) (image.getWidth() * scale), (int) (image.getHeight() * scale), Image.SCALE_SMOOTH);
+        float scale = Math.min(1f,
+                Math.min((float) modelos.getLabel().getWidth() / image.getWidth(),
+                        (float) modelos.getLabel().getHeight() / image.getHeight()));
+        return image.getScaledInstance((int) (image.getWidth() * scale), (int) (image.getHeight() * scale),
+                Image.SCALE_SMOOTH);
     }
 
     private void showPreviousPage() {
-        if (currentPage > 0) {
-            currentPage--;
+        if (modelos.getCurrentPage() > 0) {
+            modelos.setCurrentPage(modelos.getCurrentPage() - 1);
             updatePage();
         }
     }
 
     private void showNextPage() {
-        if (pdfDocument != null && currentPage < pdfDocument.getNumberOfPages() - 1) {
-            currentPage++;
+        if (modelos.getPdfDocument() != null
+                && modelos.getCurrentPage() < modelos.getPdfDocument().getNumberOfPages() - 1) {
+            modelos.setCurrentPage(modelos.getCurrentPage() + 1);
             updatePage();
         }
     }
 
     private void updatePage() {
-        displayPage(currentPage);
+        displayPage(modelos.getCurrentPage());
         updateNavigationButtons();
         updateBookInfo();
-        saveBookmark(currentPage);
+        saveBookmark(modelos.getCurrentPage());
     }
 
     private void updateNavigationButtons() {
-        buttonPrevious.setEnabled(currentPage > 0);
-        buttonNext.setEnabled(pdfDocument != null && currentPage < pdfDocument.getNumberOfPages() - 1);
+        modelos.getButtonPrevious().setEnabled(modelos.getCurrentPage() > 0);
+        modelos.getButtonNext()
+                .setEnabled(modelos.getPdfDocument() != null
+                        && modelos.getCurrentPage() < modelos.getPdfDocument().getNumberOfPages() - 1);
     }
 
     private void updateBookInfo() {
-        if (pdfDocument != null) {
-            labelInfo.setText("Página " + (currentPage + 1) + " de " + pdfDocument.getNumberOfPages());
+        if (modelos.getPdfDocument() != null) {
+            modelos.getLabelInfo().setText(
+                    "Página " + (modelos.getCurrentPage() + 1) + " de " + modelos.getPdfDocument().getNumberOfPages());
         }
     }
 
     private int loadBookmark() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(bookmarkFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(modelos.getBookmarkFile()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.equals(selectedFile.getAbsolutePath())) {
+                if (line.equals(modelos.getSelectedFile().getAbsolutePath())) {
                     return Integer.parseInt(reader.readLine());
                 }
             }
@@ -193,10 +194,10 @@ public class PDFViewer extends JFrame {
     private void saveBookmark(int pageNumber) {
         List<String> lines = new ArrayList<>();
         boolean found = false;
-        try (BufferedReader reader = new BufferedReader(new FileReader(bookmarkFile))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(modelos.getBookmarkFile()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.equals(selectedFile.getAbsolutePath())) {
+                if (line.equals(modelos.getSelectedFile().getAbsolutePath())) {
                     lines.add(line);
                     lines.add(String.valueOf(pageNumber));
                     reader.readLine();
@@ -210,11 +211,11 @@ public class PDFViewer extends JFrame {
         }
 
         if (!found) {
-            lines.add(selectedFile.getAbsolutePath());
+            lines.add(modelos.getSelectedFile().getAbsolutePath());
             lines.add(String.valueOf(pageNumber));
         }
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(bookmarkFile))) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(modelos.getBookmarkFile()))) {
             for (String line : lines) {
                 writer.write(line);
                 writer.newLine();
@@ -225,13 +226,13 @@ public class PDFViewer extends JFrame {
     }
 
     private void loadBookmarks() {
-        bookmarksPanel.setPreferredSize(new Dimension(200, 0));
-        try (BufferedReader reader = new BufferedReader(new FileReader(bookmarkFile))) {
+        modelos.getBookmarksPanel().setPreferredSize(new Dimension(200, 0));
+        try (BufferedReader reader = new BufferedReader(new FileReader(modelos.getBookmarkFile()))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String filePath = line;
                 JButton button = createBookmarkButton(filePath);
-                bookmarksPanel.add(button);
+                modelos.getBookmarksPanel().add(button);
                 reader.readLine();
             }
         } catch (IOException e) {
@@ -239,18 +240,29 @@ public class PDFViewer extends JFrame {
         }
     }
 
+    private boolean bookmarksPanelExpanded = false;
+
     private JButton createBookmarkButton(String filePath) {
         JButton button = new JButton(new File(filePath).getName());
         button.setPreferredSize(new Dimension(200, 30));
         button.addActionListener(e -> {
-            openFilePDF(new File(filePath));
-            bookmarksPanel.setVisible(false);
+            if (bookmarksPanelExpanded) {
+                modelos.getBookmarksPanel().setPreferredSize(new Dimension(200, 0));
+                bookmarksPanelExpanded = false;
+
+            } else {
+                openFilePDF(new File(filePath));
+                modelos.getBookmarksPanel().setPreferredSize(new Dimension(20, 0));
+                bookmarksPanelExpanded = true;
+            }
+            modelos.getBookmarksPanel().revalidate();
         });
+
         return button;
     }
 
     private void openFilePDF(File file) {
-        selectedFile = file;
+        modelos.setSelectedFile(file);
         try {
             loadPDF(file);
         } catch (IOException e) {
@@ -297,6 +309,39 @@ public class PDFViewer extends JFrame {
 
     private void showErrorDialog(String message) {
         JOptionPane.showMessageDialog(this, message, "Erro", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public void apagarLivrosDaLista() {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(modelos.getBookmarkFile()));
+            FileWriter writer = new FileWriter("temporario.txt");
+            String linhaAtual;
+            while ((linhaAtual = reader.readLine()) != null) {
+                if (linhaAtual.equals(modelos.getSelectedFile().toString())) {
+                    reader.readLine();
+                    continue;
+                }
+                writer.write(linhaAtual + "\n");
+            }
+
+            reader.close();
+            writer.close();
+
+            File arquivoOriginal = new File(modelos.getBookmarkFile());
+            File temporario = new File("temporario.txt");
+            if (arquivoOriginal.delete()) {
+                temporario.renameTo(arquivoOriginal);
+            } else {
+                throw new IOException("Falha ao renomear arquivo temporário para o original.");
+            }
+
+            System.out.println("Linha removida com sucesso.");
+
+        } catch (FileNotFoundException e) {
+            System.err.println("Arquivo não encontrado: " + e.getMessage());
+        } catch (IOException e) {
+            System.err.println("Erro de I/O: " + e.getMessage());
+        }
     }
 
     public static void main(String[] args) {
